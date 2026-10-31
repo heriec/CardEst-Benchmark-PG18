@@ -1,0 +1,7 @@
+.git
+build
+*.o
+*.a
+*.so
+__pycache__
+artifacts

@@ -191,6 +191,10 @@ def sql_literal(value: str) -> str:
 def driver_sql(queries: Iterable[WorkloadQuery], manifest: pathlib.Path) -> str:
     lines = [
         r'\set ON_ERROR_STOP on',
+        'SET geqo = off;',
+        'SET max_parallel_workers = 0;',
+        'SET max_parallel_workers_per_gather = 0;',
+        'SET enable_self_join_elimination = off;',
         'SET cardest_benchmark.enabled = off;',
         'SET cardest_benchmark.dump_subplans = on;',
         f'SET cardest_benchmark.dump_file = {sql_literal(str(manifest.resolve()))};',
