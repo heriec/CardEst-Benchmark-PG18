@@ -95,6 +95,7 @@
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
+#include "optimizer/cardest_benchmark.h"
 #include "optimizer/clauses.h"
 #include "optimizer/cost.h"
 #include "optimizer/optimizer.h"
@@ -5360,6 +5361,7 @@ set_baserel_size_estimates(PlannerInfo *root, RelOptInfo *rel)
 							   JOIN_INNER,
 							   NULL);
 
+	nrows = cardest_benchmark_baserel_rows(root, rel, nrows);
 	rel->rows = clamp_row_est(nrows);
 
 	cost_qual_eval(&rel->baserestrictcost, rel->baserestrictinfo, root);
@@ -5439,6 +5441,8 @@ set_joinrel_size_estimates(PlannerInfo *root, RelOptInfo *rel,
 										   inner_rel->rows,
 										   sjinfo,
 										   restrictlist);
+	rel->rows = clamp_row_est(cardest_benchmark_joinrel_rows(root, rel,
+														 rel->rows));
 }
 
 /*

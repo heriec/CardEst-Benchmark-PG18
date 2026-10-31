@@ -56,6 +56,7 @@
 #include "libpq/oauth.h"
 #include "libpq/scram.h"
 #include "nodes/queryjumble.h"
+#include "optimizer/cardest_benchmark.h"
 #include "optimizer/cost.h"
 #include "optimizer/geqo.h"
 #include "optimizer/optimizer.h"
@@ -2150,6 +2151,39 @@ struct config_bool ConfigureNamesBool[] =
 		},
 		&vacuum_truncate,
 		true,
+		NULL, NULL, NULL
+	},
+
+	{
+		{"cardest_benchmark.enabled", PGC_USERSET, CUSTOM_OPTIONS,
+			gettext_noop("Uses externally supplied cardinality estimates."),
+			gettext_noop("Estimates are matched by query identity and sorted relation aliases."),
+			GUC_NOT_IN_SAMPLE
+		},
+		&cardest_benchmark_enabled,
+		false,
+		NULL, NULL, NULL
+	},
+
+	{
+		{"cardest_benchmark.strict", PGC_USERSET, CUSTOM_OPTIONS,
+			gettext_noop("Fails planning when a requested cardinality estimate is missing."),
+			NULL,
+			GUC_NOT_IN_SAMPLE
+		},
+		&cardest_benchmark_strict,
+		true,
+		NULL, NULL, NULL
+	},
+
+	{
+		{"cardest_benchmark.dump_subplans", PGC_USERSET, CUSTOM_OPTIONS,
+			gettext_noop("Appends stable subplan identities and PostgreSQL estimates to a manifest."),
+			NULL,
+			GUC_NOT_IN_SAMPLE
+		},
+		&cardest_benchmark_dump_subplans,
+		false,
 		NULL, NULL, NULL
 	},
 
@@ -5004,6 +5038,39 @@ struct config_string ConfigureNamesString[] =
 		&log_connections_string,
 		"",
 		check_log_connections, assign_log_connections, NULL
+	},
+
+	{
+		{"cardest_benchmark.estimates_file", PGC_USERSET, CUSTOM_OPTIONS,
+			gettext_noop("Sets the cardinality benchmark estimates file."),
+			NULL,
+			GUC_NOT_IN_SAMPLE
+		},
+		&cardest_benchmark_estimates_file,
+		"",
+		NULL, NULL, NULL
+	},
+
+	{
+		{"cardest_benchmark.dump_file", PGC_USERSET, CUSTOM_OPTIONS,
+			gettext_noop("Sets the cardinality benchmark subplan manifest file."),
+			NULL,
+			GUC_NOT_IN_SAMPLE
+		},
+		&cardest_benchmark_dump_file,
+		"",
+		NULL, NULL, NULL
+	},
+
+	{
+		{"cardest_benchmark.query_id", PGC_USERSET, CUSTOM_OPTIONS,
+			gettext_noop("Sets an explicit benchmark query identity."),
+			gettext_noop("This overrides PostgreSQL's normalized query identifier."),
+			GUC_NOT_IN_SAMPLE
+		},
+		&cardest_benchmark_query_id,
+		"",
+		NULL, NULL, NULL
 	},
 
 

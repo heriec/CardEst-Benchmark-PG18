@@ -2,6 +2,7 @@
 
 backend_sources += files(
   'allpaths.c',
+  'cardest_benchmark.c',
   'clausesel.c',
   'costsize.c',
   'equivclass.c',
