@@ -73,6 +73,7 @@ def split_top_level(text: str, delimiter: str) -> list[str]:
     quote: str | None = None
     i = 0
     delimiter_upper = delimiter.upper()
+    between_pending = False
 
     while i < len(text):
         char = text[i]
@@ -100,6 +101,14 @@ def split_top_level(text: str, delimiter: str) -> list[str]:
             continue
 
         if depth == 0:
+            if delimiter_upper == 'AND' and text[i:i + 7].upper() == 'BETWEEN':
+                before_ok = i == 0 or not (text[i - 1].isalnum() or text[i - 1] in '_$')
+                end = i + 7
+                after_ok = end == len(text) or not (text[end].isalnum() or text[end] in '_$')
+                if before_ok and after_ok:
+                    between_pending = True
+                    i = end
+                    continue
             if delimiter == ',' and char == ',':
                 result.append(text[start:i].strip())
                 start = i + 1
@@ -110,6 +119,10 @@ def split_top_level(text: str, delimiter: str) -> list[str]:
                 end = i + len(delimiter)
                 after_ok = end == len(text) or not (text[end].isalnum() or text[end] in '_$')
                 if before_ok and after_ok:
+                    if between_pending:
+                        between_pending = False
+                        i = end
+                        continue
                     result.append(text[start:i].strip())
                     start = end
                     i = end
