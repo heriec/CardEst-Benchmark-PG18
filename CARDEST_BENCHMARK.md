@@ -41,6 +41,64 @@ The dump intentionally records planner requests, so a relation set may occur
 more than once. Before using it as an estimates file, deduplicate by the first
 three fields and verify that repeated keys agree about the intended estimate.
 
+## Enumerate a workload and emit executable subplan SQL
+
+`tools/cardest_workload.py` accepts the benchmark workload format used by
+`workloads/stats_CEB/stats_CEB.sql`:
+
+```text
+true_cardinality||SELECT COUNT(*) FROM ... WHERE ...;
+```
+
+With the STATS database already loaded, enumerate PostgreSQL 18's relation
+sets and materialize every join subquery with one command:
+
+```bash
+python3 tools/cardest_workload.py run \
+  --workload workloads/stats_CEB/stats_CEB.sql \
+  --id-prefix stats_CEB \
+  --manifest /tmp/stats_CEB_subplans.tsv \
+  --output /tmp/stats_CEB_join_subqueries.tsv \
+  --kind join \
+  --dsn stats
+```
+
+Connection arguments can be repeated, for example:
+
+```bash
+  --psql-arg=-h --psql-arg=127.0.0.1 \
+  --psql-arg=-p --psql-arg=5432 \
+  --psql-arg=-U --psql-arg=postgres
+```
+
+The output TSV contains:
+
+```text
+query_id  kind  relations  postgres_rows  sql
+```
+
+The `sql` column is directly executable `SELECT COUNT(*)` SQL. Predicates are
+included exactly when all aliases referenced by that predicate belong to the
+subplan. Use `--kind all` to include filtered single-table subqueries too.
+
+For a two-step workflow, use `driver` to generate a psql script and
+`materialize` after running that script:
+
+```bash
+python3 tools/cardest_workload.py driver \
+  --workload workloads/stats_CEB/stats_CEB.sql \
+  --id-prefix stats_CEB \
+  --manifest /tmp/stats_CEB_subplans.tsv \
+  --output /tmp/stats_CEB_driver.sql
+psql -X -v ON_ERROR_STOP=1 -d stats -f /tmp/stats_CEB_driver.sql
+python3 tools/cardest_workload.py materialize \
+  --workload workloads/stats_CEB/stats_CEB.sql \
+  --id-prefix stats_CEB \
+  --manifest /tmp/stats_CEB_subplans.tsv \
+  --output /tmp/stats_CEB_join_subqueries.tsv \
+  --kind join
+```
+
 ## Inject estimates
 
 Prepare a tab-separated file with exactly four fields:
