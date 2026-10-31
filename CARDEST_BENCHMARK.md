@@ -149,7 +149,23 @@ The keyed interface overrides:
 - unparameterized join-relation cardinalities in
   `set_joinrel_size_estimates()`.
 
-Parameterized path cardinalities are not yet externally keyed. PostgreSQL
-still derives them internally and caps them by the injected unparameterized
-join cardinality. Extending the file key with parameterization identity is a
-separate compatibility step and must not fall back to ordinal matching.
+For a parameterized base path, PostgreSQL still estimates the conditional
+effect of the parameter clauses. The benchmark applies that effect on the
+injected base-cardinality scale:
+
+```text
+injected_parameterized_rows = injected_base_rows
+                            * postgres_parameterized_rows
+                            / postgres_base_rows
+```
+
+The result is capped by `injected_base_rows`. Thus an injected base estimate
+is used consistently by both unparameterized and parameterized base paths,
+without adding a separate PPI key or claiming an exact parameterized oracle.
+The ratio is PostgreSQL's estimate and can still be wrong.
+
+Parameterized join-path cardinalities are not yet externally keyed.
+PostgreSQL derives them from child path rows and its clause selectivities, and
+caps them by the injected unparameterized join cardinality. Extending the file
+key with parameterization identity is a separate compatibility step and must
+not fall back to ordinal matching.

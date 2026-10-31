@@ -5382,6 +5382,7 @@ get_parameterized_baserel_size(PlannerInfo *root, RelOptInfo *rel,
 							   List *param_clauses)
 {
 	List	   *allclauses;
+	double		postgres_base_rows;
 	double		nrows;
 
 	/*
@@ -5398,6 +5399,24 @@ get_parameterized_baserel_size(PlannerInfo *root, RelOptInfo *rel,
 							   JOIN_INNER,
 							   NULL);
 	nrows = clamp_row_est(nrows);
+
+	/*
+	 * Recover PostgreSQL's unparameterized estimate so the benchmark can
+	 * preserve PostgreSQL's conditional parameter selectivity while applying
+	 * it on the injected base-cardinality scale.
+	 */
+	postgres_base_rows = rel->tuples *
+		clauselist_selectivity(root,
+							   rel->baserestrictinfo,
+							   0,
+							   JOIN_INNER,
+							   NULL);
+	postgres_base_rows = clamp_row_est(postgres_base_rows);
+	nrows = cardest_benchmark_parameterized_baserel_rows(rel,
+													 postgres_base_rows,
+													 nrows);
+	nrows = clamp_row_est(nrows);
+
 	/* For safety, make sure result is not more than the base estimate */
 	if (nrows > rel->rows)
 		nrows = rel->rows;

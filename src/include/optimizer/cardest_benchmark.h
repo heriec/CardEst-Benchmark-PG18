@@ -23,5 +23,9 @@ extern double cardest_benchmark_baserel_rows(PlannerInfo *root,
 extern double cardest_benchmark_joinrel_rows(PlannerInfo *root,
 											 RelOptInfo *rel,
 											 double postgres_rows);
+extern double cardest_benchmark_parameterized_baserel_rows(
+	RelOptInfo *rel,
+	double postgres_base_rows,
+	double postgres_parameterized_rows);
 
 #endif							/* CARDEST_BENCHMARK_H */

@@ -387,3 +387,28 @@ cardest_benchmark_joinrel_rows(PlannerInfo *root, RelOptInfo *rel,
 {
 	return cardest_rows(root, rel->relids, "join", postgres_rows);
 }
+
+/*
+ * Rescale PostgreSQL's parameterized base-row estimate by the ratio between
+ * the injected and PostgreSQL unparameterized base estimates.  This keeps
+ * PostgreSQL's estimate of the conditional effect of the parameter clauses,
+ * while making parameterized and unparameterized paths use the same injected
+ * base-cardinality scale.
+ */
+double
+cardest_benchmark_parameterized_baserel_rows(RelOptInfo *rel,
+										 double postgres_base_rows,
+										 double postgres_parameterized_rows)
+{
+	double		rows;
+
+	if (!cardest_benchmark_enabled || postgres_base_rows <= 0.0)
+		return postgres_parameterized_rows;
+
+	rows = rel->rows * postgres_parameterized_rows / postgres_base_rows;
+
+	/* A parameterized scan cannot return more rows than its base relation. */
+	if (rows > rel->rows)
+		rows = rel->rows;
+	return rows;
+}
